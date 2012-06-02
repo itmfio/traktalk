@@ -2,7 +2,6 @@ package net.floaterio.traktalk.twitter
 
 import swing._
 import event.{ValueChanged, ButtonClicked}
-import twitter4j.TwitterFactory
 import twitter4j.auth.RequestToken
 import org.apache.commons.logging.LogFactory
 import java.net.URL
@@ -11,6 +10,7 @@ import net.floaterio.traktalk.gui.{LabelWidth, Gap}
 import swing.BorderPanel.Position
 import java.awt.{Toolkit, Desktop}
 import java.awt.datatransfer.StringSelection
+import twitter4j.{Twitter, TwitterFactory}
 
 /**
  * Created with IntelliJ IDEA.
@@ -74,7 +74,7 @@ class OAuthDialog(controller: OAuthDialogController, owner: Window) extends Dial
   }
 }
 
-class OAuthDialogController(oAuthSupport: OAuthSupport, owner: Window) {
+class OAuthDialogController(oAuthSupport: OAuthSupport, owner: Window, twitter: Twitter) {
 
   import oAuthSupport._
 
@@ -83,12 +83,6 @@ class OAuthDialogController(oAuthSupport: OAuthSupport, owner: Window) {
   lazy val dialog = new OAuthDialog(this, owner)
 
   import dialog._
-
-  lazy val twitter = {
-    val t = TwitterFactory.getSingleton()
-    t.setOAuthConsumer(consumerKey, consumerSecret)
-    t
-  }
 
   val requestToken: RequestToken = {
     val r = twitter.getOAuthRequestToken()

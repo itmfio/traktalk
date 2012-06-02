@@ -4,14 +4,14 @@ import common.{AddSwingListener, GlobalEventHandler, ConfigSupport}
 import edit.EditDialogController
 import javax.swing.SwingUtilities
 import server.{SongNameInfo, SongNameServer}
-import twitter.OAuthDialogController
 import org.apache.commons.logging.LogFactory
 import java.util.Date
 import java.text.SimpleDateFormat
 import org.apache.commons.lang.StringUtils
 import swing.event.{WindowClosing, WindowOpened}
+import twitter.{SingletonTwitterFactory, OAuthDialogController}
 import twitter4j.auth.AccessToken
-import twitter4j.{TwitterException, TwitterFactory}
+import twitter4j.{Twitter, TwitterException, TwitterFactory}
 
 /**
  * Created with IntelliJ IDEA.
@@ -26,7 +26,11 @@ class TopFrameController(config: ConfigSupport) {
   val log = LogFactory.getLog(getClass)
 
   lazy val server = new SongNameServer(config.general.port)
-  lazy val twitter = TwitterFactory.getSingleton()
+
+  var twitter:Twitter = newTwitter
+  var authorized = false
+
+  def newTwitter = SingletonTwitterFactory.newTwitterWithConfig(config.oAuth)
 
   lazy val frame: TopFrame = new TopFrame(this)
 
@@ -35,17 +39,7 @@ class TopFrameController(config: ConfigSupport) {
   frame.reactions += {
 
     case e: WindowOpened => {
-
-      val at = config.oAuth.accessToken
-      val as = config.oAuth.accessSecret
-
-      if (at != null && !at.isEmpty && as != null && !as.isEmpty) {
-        twitter.setOAuthConsumer(config.oAuth.consumerKey, config.oAuth.consumerSecret)
-        twitter.setOAuthAccessToken(new AccessToken(at, as))
-      } else {
-        new OAuthDialogController(config.oAuth, frame).openDialog()
-      }
-      refreshTitle()
+      login()
     }
     case e: WindowClosing => {
       log.info("save configuration")
@@ -114,14 +108,61 @@ class TopFrameController(config: ConfigSupport) {
   def safeWithTwitter(errorMsg: String)(f: => Unit) = {
     try {
       f
+      true
     } catch {
-      case e:TwitterException => addStatus(errorMsg)
+      case e:Exception => {
+        addStatus(errorMsg)
+        false
+      }
     }
   }
 
   def formatByTemplate(text:String, info: SongNameInfo) = {
     val s1 = StringUtils.replace(text, "%ARTIST%", info.artist)
     StringUtils.replace(s1, "%TITLE%", info.title)
+  }
+
+  def loginOrLogout() {
+    if (authorized) {
+      logout()
+    } else {
+      login()
+    }
+  }
+
+  def logout() = {
+    twitter = newTwitter
+    config.oAuth.saveAccessToken("")
+    config.oAuth.saveAccessSecret("")
+    authorized = false
+    addStatus("Logout")
+    resetButtonTitle
+  }
+
+  def login() = {
+    val at = config.oAuth.accessToken
+    val as = config.oAuth.accessSecret
+    if (StringUtils.isNotBlank(at) && StringUtils.isNotBlank(as)) {
+      twitter.setOAuthAccessToken(new AccessToken(at, as))
+    } else {
+      log.info("login as new account...")
+      new OAuthDialogController(config.oAuth, frame, twitter).openDialog()
+    }
+    if (refreshTitle()) {
+      authorized = true
+    } else {
+      logout()
+    }
+    resetButtonTitle
+  }
+
+  def resetButtonTitle = {
+    log.info("reset button title")
+    if (authorized) {
+      frame.login.text = "Logout"
+    } else {
+      frame.login.text = "Login"
+    }
   }
 
 }

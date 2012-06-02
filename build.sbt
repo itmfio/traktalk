@@ -15,4 +15,6 @@ libraryDependencies ++= Seq("commons-logging" % "commons-logging" % "1.1.1",
                            "net.sf.nimrod" % "nimrod-laf" % "1.2"
                            )
 
+seq(assemblySettings: _*)
+
 
