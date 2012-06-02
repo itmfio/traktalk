@@ -1,7 +1,7 @@
 package net.floaterio.traktalk
 
 import swing._
-import event.{Key, KeyPressed, KeyTyped, ButtonClicked}
+import event._
 import gui.SwingSupport._
 import scala.swing.MainFrame
 import swing.BorderPanel.Position
@@ -26,6 +26,11 @@ class TopFrame(controller: TopFrameController) extends MainFrame {
     wordWrap = true
     preferredSize = d(width, 150)
     reactions += {
+      case ValueChanged(s) => {
+        val l = text.length
+        countLabel.text = (140 - l).toString
+        tweetBtn.enabled = l > 0 && l <= 140
+      }
       case e: KeyPressed => {
 //        if (e.key == Key.Enter) {
 //          controller.tweet()
@@ -71,16 +76,24 @@ class TopFrame(controller: TopFrameController) extends MainFrame {
 
   defaultButton = tweetBtn
 
-  contents = new BorderPanel() {
-    add(new FlowPanel {
+  val countLabel = new Label("140")
+
+  val buttonPanel = new BorderPanel() {
+    add(new FlowPanel(FlowPanel.Alignment.Left)() {
       contents += serverBtn
-      contents += tweetBtn
+      contents += login
       contents += simpleButton("Setting...") {
         controller.editTemplate()
       }
-      contents += login
-    }, Position.North)
+    }, Position.West)
+    add(new FlowPanel(FlowPanel.Alignment.Right)() {
+      contents += countLabel
+      contents += tweetBtn
+    }, Position.East)
+  }
 
+  contents = new BorderPanel() {
+    add(buttonPanel, Position.North)
     add(new SplitPane(Orientation.Horizontal){
       topComponent = tweetText
       val scroll = new ScrollPane(statusText) {

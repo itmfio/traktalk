@@ -2,10 +2,10 @@ package net.floaterio.traktalk.server
 
 import java.net.ServerSocket
 import java.io._
-import java.util.concurrent.Executors
 import actors.Actor._
 import org.apache.commons.logging.LogFactory
 import net.floaterio.traktalk.common.{SendMessage, GlobalEventHandler}
+import java.util.concurrent.{Future, Executors}
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,17 +15,15 @@ import net.floaterio.traktalk.common.{SendMessage, GlobalEventHandler}
  * To change this template use File | Settings | File Templates.
  */
 
-// TODO Use RemoteActor
-
 class SongNameServer(port: Int) {
-
-  private val listener = new ServerSocket(port)
 
   val logger = LogFactory.getLog(getClass)
 
-  private var running = true
-  // private var future: Future = null
+  private var listener: ServerSocket = null
+  private var future: Future[_] = null
   private var songNameListeners = List[(SongNameInfo => Unit)]()
+
+  private val executor = Executors.newSingleThreadExecutor()
 
   def += (l: (SongNameInfo => Unit)) = {
     songNameListeners = l :: songNameListeners
@@ -46,20 +44,25 @@ class SongNameServer(port: Int) {
   }
 
   def runServer = {
+    stop
 
-    running = true
-    Executors.newSingleThreadExecutor().execute(new Runnable {
+    listener = new ServerSocket(port)
+    future = executor.submit(new Runnable {
       def run() {
-        while (running) {
+        while(!future.isCancelled){
           listen
+          Thread.sleep(1000)
         }
       }
     })
   }
 
-  // TODO Cannot stop server when listener is waiting
   def stop = {
-    running = false
+    safeClose(listener)
+    if (future != null && !future.isCancelled && !future.isDone) {
+      future.cancel(false)
+      future = null
+    }
   }
 
   private def listen = {
@@ -93,7 +96,7 @@ class SongNameServer(port: Int) {
 
         val pattern = ".*ARTIST=(.*)TITLE=(.*)vorbis".r
 
-        while (running) {
+        while (!listener.isClosed) {
           val str = in.readLine()
           if (str != null) {
             if (str.contains("ARTIST")) {
@@ -108,14 +111,17 @@ class SongNameServer(port: Int) {
             Thread.sleep(1000)
           }
         }
+
+        out.flush()
+
       } else {
         out.write("HTTP/1.0 404 Not found\r\n\r\n")
         out.flush()
       }
     } catch {
       case e: IOException => {
-        GlobalEventHandler.sendMessage("Connection Error Occured")
-        logger.error("IO Error", e)
+        // GlobalEventHandler.sendMessage("Connection Error Occured")
+        logger.warn("IO Error", e)
       }
     } finally {
 
@@ -126,7 +132,7 @@ class SongNameServer(port: Int) {
     }
   }
 
-  def safeClose(c: Closeable) = {
+  def safeClose[T <: {def close()}](c: T) = {
     if (c != null) {
       try {
         c.close()
