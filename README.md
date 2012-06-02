@@ -5,6 +5,8 @@
 Traktalk help you to tweet song name on Twitter
 when bloadcast DJ play with Ustream and Traktor.
 
+Download from here ! https://github.com/itmfio/traktalk/downloads
+
 ## Requirements
 
 ### Runtime
