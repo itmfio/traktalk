@@ -15,7 +15,7 @@ when bloadcast DJ play with Ustream and Traktor.
 
 * Scala 2.9.1
 * sbt 0.11.0
-* Twitter consumer key and secret
+* Twitter consumer key and secret (Need editing "OAuthSupport.scala")
 * Traktor Pro 2
 
 ## Traktor Setting
