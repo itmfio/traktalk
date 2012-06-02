@@ -21,6 +21,7 @@ when bloadcast DJ play with Ustream and Traktor.
 ## Traktor Setting
 
 * setitng icecast server host and port
+
 Preferences > Bloadcasting > 
 Address: localhost
 Port: 9000 (also can define by user)
