@@ -22,10 +22,10 @@ when bloadcast DJ play with Ustream and Traktor.
 
 * setitng icecast server host and port
 
-Preferences > Bloadcasting > 
-Address: localhost
-Port: 9000 (also can define by user)
-Format: Ogg, Vorbis, 11025 Hz, 32kBit/s
+* Preferences > Bloadcasting > 
+* Address: localhost
+* Port: 9000 (also can define by user)
+* Format: Ogg, Vorbis, 11025 Hz, 32kBit/s
 
 ## How to Use
 
